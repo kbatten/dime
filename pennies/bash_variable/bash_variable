@@ -4,6 +4,8 @@ function bash_variable_verify {
     local variable=${1}
     local value=${2}
 
+    if [[ -z ${variable} ]] ; then return 1; fi
+
     echo "source ${HOME}/.bashrc ; [[ \"\${${variable}}\" == \"${value}\" ]]" | bash -i &> /dev/null
     return $?
 }
@@ -13,6 +15,8 @@ function bash_variable {
 
     local variable=${1}
     local value=${2}
+
+    if [[ -z ${variable} ]] ; then return 1; fi
 
     if grep "^export ${variable}=" ${HOME}/.bashrc ; then
         sed -i "s/^export ${variable}=.*/export ${variable}='${value}'/" ${HOME}/.bashrc
