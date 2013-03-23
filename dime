@@ -187,6 +187,7 @@ case ${1} in
         ;;
     *)
         usage
+        ;;
 esac
 
 # display any failures to stdout
