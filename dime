@@ -141,6 +141,7 @@ function run_penny {
 
     local penny=${1}
     shift
+    local args=${@}
 
     log info "${penny} ${@}"
     echo "${penny} ${@}"
@@ -150,7 +151,7 @@ function run_penny {
         # add require failures
         log error "${penny} ${@} failed to install"
         echo " FAIL"
-        DIME_FAILED=$(echo -e "${DIME_FAILED}\n${penny}" | sort | uniq | grep -v "^$")
+        DIME_FAILED=$(echo -e "${DIME_FAILED}\n${penny} ${args}" | sort | uniq | grep -v "^$")
         return ${r}
     fi
 
@@ -178,7 +179,7 @@ function run_penny {
         if [[ ${penny_r} -ne 0 ]] ; then
             log error "${penny} ${@} failed to install"
             echo " FAIL"
-            DIME_FAILED=$(echo -e "${DIME_FAILED}\n${penny}" | sort | uniq | grep -v "^$")
+            DIME_FAILED=$(echo -e "${DIME_FAILED}\n${penny} ${args}" | sort | uniq | grep -v "^$")
             return ${penny_r}
         fi
     fi
