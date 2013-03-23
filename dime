@@ -6,6 +6,8 @@ DIME_LOGLEVEL=2
 #globals
 export DIME_SCRIPTPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 readonly DIME_SCRIPTPATH
+export DIME_CACHEPATH="${HOME}/.dime.d/cache"
+readonly DIME_CACHEPATH
 
 #script globals
 DIME_PENNIES=""
@@ -158,6 +160,8 @@ function run_penny {
     if ${penny}_verify ${@} 1>&2 ; then
         log info "${penny} ${@} already installed"
     else
+        pushd . &> /dev/null
+
         # only install if we have to
         # TODO: better method of logging results
         if [[ ${DIME_LOGLEVEL} -le 2 && ! ${penny} == "wallet" ]] ; then
@@ -174,6 +178,8 @@ function run_penny {
         if [[ ${DIME_LOGLEVEL} -le 2 && ! ${penny} == "wallet" ]] ; then
             set +x
         fi
+
+        popd &> /dev/null
 
         # if penny failed, then record it
         if [[ ${penny_r} -ne 0 ]] ; then
