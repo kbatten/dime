@@ -1,0 +1,28 @@
+#!/bin/bash
+
+function wallet_verify {
+    # always return false because dime will verify individual pennies
+    return 1
+}
+
+function wallet {
+    local retval=0
+
+    local wallet
+    local r
+    local IFSo=${IFS}
+    local IFS=$'\n'
+    for wallet in ${@} ; do
+        for penny_cmd in $(cat ${wallet}) ; do
+            IFS=${IFSo}
+            run_penny ${penny_cmd} ; r=${?}
+            if [[ ${r} -ne 0 ]] ; then
+                retval=1
+            fi
+            IFS=$'\n'
+        done
+    done
+
+    # always return true because dime will track individual failures
+    return 0
+}

@@ -153,30 +153,45 @@ function run_penny {
         return ${r}
     fi
 
-    # TODO: better method of logging results
-    if [[ ${DIME_LOGLEVEL} -le 2 ]] ; then
-        set -x
-    fi
-    ${penny} ${@} 1>&2
-    penny_r=${?}
-    # TODO: better method of logging results 2
-    if [[ ${DIME_LOGLEVEL} -le 2 ]] ; then
-        set +x
-    fi
+    if ${penny}_verify ${@} 1>&2 ; then
+        log info "${penny} ${@} already installed"
+    else
+        # only install if we have to
+        # TODO: better method of logging results
+        if [[ ${DIME_LOGLEVEL} -le 2 && ! ${penny} == "wallet" ]] ; then
+            set -x
+        fi
+        if [[ ! ${penny} == "wallet" ]] ; then
+            ${penny} ${@} 1>&2
+            penny_r=${?}
+        else
+            ${penny} ${@}
+            penny_r=${?}
+        fi
+        # TODO: better method of logging results 2
+        if [[ ${DIME_LOGLEVEL} -le 2 && ! ${penny} == "wallet" ]] ; then
+            set +x
+        fi
 
-    # if penny failed, then record it
-    if [[ ${penny_r} -ne 0 ]] ; then
-        log error "${penny} ${@} failed to install"
-        echo " FAIL"
-        DIME_FAILED=$(echo -e "${DIME_FAILED}\n${penny}" | sort | uniq | grep -v "^$")
-        return ${penny_r}
+        # if penny failed, then record it
+        if [[ ${penny_r} -ne 0 ]] ; then
+            log error "${penny} ${@} failed to install"
+            echo " FAIL"
+            DIME_FAILED=$(echo -e "${DIME_FAILED}\n${penny}" | sort | uniq | grep -v "^$")
+            return ${penny_r}
+        fi
     fi
 }
 
 function usage {
     # convetion:
     #  print stdout
-    echo "dime install <penny>"
+    echo "dime <cmd> [params]
+
+install:
+ <penny>               install a penny
+ wallet <file> [file]  install wallets full of pennies
+"
     exit ${DIME_ERR_USAGE}
 }
 
