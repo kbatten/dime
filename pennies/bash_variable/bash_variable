@@ -1,0 +1,22 @@
+#!/bin/bash
+
+function bash_variable {
+    local retval=0
+
+    local variable=${1}
+    local value=${2}
+
+    if grep "^export ${variable}=" ~/.bashrc ; then
+        sed -i "s/^export ${variable}=.*/export ${variable}='${value}'/" ~/.bashrc
+    else
+        echo "export ${variable}='${value}'" >> ~/.bashrc
+    fi
+
+    # verify installation
+    if ! echo "echo \$${variable}" | bash ; then
+        log error "${variable}=${value} failed"
+        retval=1
+    fi
+
+    return ${retval}
+}
