@@ -1,21 +1,29 @@
 #!/bin/bash
 
+function bash_variable_verify {
+    local variable=${1}
+    local value=${2}
+
+    echo "source ${HOME}/.bashrc ; [[ \"\${${variable}}\" == \"${value}\" ]]" | bash -i &> /dev/null
+    return $?
+}
+
 function bash_variable {
-    local retval=0
+    local retval
 
     local variable=${1}
     local value=${2}
 
-    if grep "^export ${variable}=" ~/.bashrc ; then
-        sed -i "s/^export ${variable}=.*/export ${variable}='${value}'/" ~/.bashrc
+    if grep "^export ${variable}=" ${HOME}/.bashrc ; then
+        sed -i "s/^export ${variable}=.*/export ${variable}='${value}'/" ${HOME}/.bashrc
     else
-        echo "export ${variable}='${value}'" >> ~/.bashrc
+        echo "export ${variable}='${value}'" >> ${HOME}/.bashrc
     fi
 
     # verify installation
-    if ! echo "echo \$${variable}" | bash ; then
+    bash_variable_verify "${variable}" "${value}" ; retval=$?
+    if [[ ! ${retval} -eq 0 ]] ; then
         log error "${variable}=${value} failed"
-        retval=1
     fi
 
     return ${retval}
