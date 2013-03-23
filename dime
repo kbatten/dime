@@ -197,7 +197,7 @@ function usage {
     echo "dime <cmd> [params]
 
 install:
- <penny>               install a penny
+ <penny> [arg] [arg]   install a penny
  wallet <file> [file]  install wallets full of pennies
 "
     exit ${DIME_ERR_USAGE}
