@@ -5,6 +5,7 @@ DIME_LOGLEVEL=2
 
 #globals
 export DIME_SCRIPTPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+readonly DIME_SCRIPTPATH
 
 #script globals
 DIME_PENNIES=""
