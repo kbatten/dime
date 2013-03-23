@@ -1,0 +1,173 @@
+#!/bin/bash
+
+#script config
+DIME_LOGLEVEL=2
+
+#globals
+export DIME_SCRIPTPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+#script globals
+DIME_PENNIES=""
+
+#constants
+DIME_ERR_NONE=0
+DIME_ERR_GENERIC=1
+DIME_ERR_USAGE=2
+DIME_ERR_NOTFOUND=4
+DIME_LOG_LEVELS="
+CRITICAL 5
+ERROR 4
+WARNING 3
+INFO 2
+DEBUG 1
+NONE 0"
+
+function log_format {
+    # params:
+    #  <stdin>  log message
+    # convention:
+    #  return stdout
+    local line
+    local timestamp
+    while read line ; do
+        timestamp=$(date +%s)
+        echo ${timestamp}:${loglevel_name}:${func}:${line}
+    done
+}
+
+function log {
+    # params:
+    #  loglevel_in  case insensitive level name or value
+    #  msg          log message (<stdin> if "-")
+    # convention:
+    #  print stdout as stderr
+    #  return error code
+
+    local loglevel_in=${1}
+    shift
+    local msg=${@}
+
+    local loglevel_search=$(echo "${DIME_LOG_LEVELS}" | grep -i -e "^${loglevel_in} " -e " ${loglevel_in}$")
+
+    local loglevel=${loglevel_search//* }
+    local loglevel_name=${loglevel_search// *}
+
+    local func=${FUNCNAME[1]}
+
+    # print out if we found a valid log level
+    if [[ -n ${loglevel} && -n ${loglevel_name} && ${loglevel} -ge ${DIME_LOGLEVEL} ]] ; then
+        local timestamp=$(date +%s)
+        # read from stdin or msg
+        if [[ ${msg} == "-" ]] ; then
+            local line
+            while read line ; do
+                timestamp=$(date +%s)
+                echo ${timestamp}:${loglevel_name}:${func}:${line} 1>&2
+            done
+        else
+            echo ${timestamp}:${loglevel_name}:${func}:${msg} 1>&2
+        fi
+    elif [[ -n ${loglevel} && -n ${loglevel_name} ]] ; then
+        : # do nothing
+    else
+        # TODO: add protection against infinite recursion
+        log error "log level \"${loglevel_in}\" not found"
+        return ${DIME_ERR_NOTFOUND}
+    fi
+}
+
+function penny_script {
+    # params:
+    #  penny - name of penny to source
+    # convention:
+    #  return stdout as penny script name
+    #  return error code
+
+    local penny=${1}
+
+    if [[ -e "${DIME_SCRIPTPATH}/pennies/${penny}/${penny}" ]] ; then
+        echo "${DIME_SCRIPTPATH}/pennies/${penny}/${penny}"
+    else
+        # bail if we couldn't find a script
+        log error "penny \"${penny}\" not found"
+        return ${DIME_ERR_NOTFOUND}
+    fi
+}
+
+function require {
+    # params:
+    #  penny - name of penny to source
+    # convention:
+    #  ignore stdout
+    #  return error code
+
+    local r=${DIME_ERR_NONE}
+
+    local penny=${1}
+
+    log debug "requiring penny \"${penny}\""
+
+    # check if already loaded
+    if echo "${DIME_PENNIES}" | grep "^${penny}$" &> /dev/null ; then
+        log debug "not loading \"${penny}\""
+        return
+    fi
+    log debug "loading \"${penny}\""
+
+    script=$(penny_script ${penny}) ; r=$?
+    if [[ ${r} -ne 0 ]] ; then
+        return ${r}
+    fi
+    log info "source ${script}"
+    source ${script}
+
+    DIME_PENNIES=$(echo -e "${DIME_PENNIES}\n${penny}")
+}
+
+function run_penny {
+    # params:
+    #  penny - name of penny to run
+    # convention:
+    #  print stdout
+    #  return error code
+
+    local r=${DIME_ERR_NONE}
+
+    local penny=${1}
+    shift
+
+    log info "running penny \"${penny}\""
+
+    require ${penny} ; r=${?}
+    if [[ ${r} -ne 0 ]] ; then
+        return ${r}
+    fi
+
+    log info "${penny} ${@}"
+    echo "${penny} ${@}"
+    # TODO: better method of logging results
+    if [[ ${DIME_LOGLEVEL} -le 2 ]] ; then
+        set -x
+    fi
+    ${penny} ${@} 2> /dev/null 1>&2
+    # TODO: better method of logging results 2
+    if [[ ${DIME_LOGLEVEL} -le 2 ]] ; then
+        set +x
+    fi
+}
+
+function usage {
+    # convetion:
+    #  print stdout
+    echo "dime install <penny>"
+    exit ${DIME_ERR_USAGE}
+}
+
+case ${1} in
+    install)
+        shift
+        run_penny ${@}
+        ;;
+    *)
+        usage
+esac
