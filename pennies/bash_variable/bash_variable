@@ -6,7 +6,7 @@ function bash_variable_verify {
 
     if [[ -z ${variable} ]] ; then return 1; fi
 
-    echo "source ${HOME}/.bashrc ; [[ \"\${${variable}}\" == \"${value}\" ]]" | bash -i &> /dev/null
+    echo "unset ${variable} ; source ${HOME}/.bashrc ; [[ \"\${${variable}}\" == \"${value}\" ]]" | bash -i &> /dev/null
     return $?
 }
 
