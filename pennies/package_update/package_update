@@ -1,0 +1,20 @@
+#!/bin/bash
+
+package_update_installed=1
+
+function package_update_verify {
+    # for now just limit executing this to once per run
+    return ${package_update_installed}
+}
+
+function package_update {
+    local retval
+
+    sudo apt-get update ${package} && package_update_installed=0
+
+    # verify installation
+    package_update_verify ${@}
+    retval=$?
+
+    return ${retval}
+}
