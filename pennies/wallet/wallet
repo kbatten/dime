@@ -13,7 +13,7 @@ function wallet {
     local IFSo=${IFS}
     local IFS=$'\n'
     for wallet in ${@} ; do
-        for penny_cmd in $(cat ${wallet}) ; do
+        for penny_cmd in $(cat ${wallet} | grep -v "^\W*#") ; do
             IFS=${IFSo}
             run_penny ${penny_cmd} ; r=${?}
             if [[ ${r} -ne 0 ]] ; then
