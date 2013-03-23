@@ -16,7 +16,7 @@ function dotfiles_verify {
 
     cd "${DIME_CACHEPATH}/dotfiles" || return 1
     git status || return 1
-    git fetch origin master || return 1
+    git fetch origin || return 1
 
     # look for diffs in the specific files against git
     if [[ $(git diff --name-status origin/master "${git_source_dir}" | wc -l) -gt 0 ]] ; then
@@ -54,7 +54,7 @@ function dotfiles {
         }
 
     # if cache existed, see if source has been modified
-    git fetch origin master
+    git fetch origin
     # look for diffs in the specific files
     if [[ $(git diff --name-status origin/master "${git_source_dir}" | wc -l) -gt 0 ]] ; then
         git pull origin master
