@@ -8,6 +8,7 @@ export DIME_SCRIPTPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 #script globals
 DIME_PENNIES=""
+DIME_FAILED=""
 
 #constants
 DIME_ERR_NONE=0
@@ -23,16 +24,22 @@ DEBUG 1
 NONE 0"
 
 function log_format {
+    set +x
     # params:
     #  <stdin>  log message
+    #  context  ":" seperated context for the message
     # convention:
     #  return stdout
+
+    local context=${@}
+
     local line
     local timestamp
     while read line ; do
         timestamp=$(date +%s)
-        echo ${timestamp}:${loglevel_name}:${func}:${line}
+        echo ${timestamp}:${context}:${line}
     done
+    set -x
 }
 
 function log {
@@ -54,18 +61,15 @@ function log {
 
     local func=${FUNCNAME[1]}
 
+    local context="${loglevel_name}:${func}"
+
     # print out if we found a valid log level
     if [[ -n ${loglevel} && -n ${loglevel_name} && ${loglevel} -ge ${DIME_LOGLEVEL} ]] ; then
-        local timestamp=$(date +%s)
         # read from stdin or msg
         if [[ ${msg} == "-" ]] ; then
-            local line
-            while read line ; do
-                timestamp=$(date +%s)
-                echo ${timestamp}:${loglevel_name}:${func}:${line} 1>&2
-            done
+            log_format ${context} 1>&2
         else
-            echo ${timestamp}:${loglevel_name}:${func}:${msg} 1>&2
+            echo ${msg} | log_format ${context} 1>&2
         fi
     elif [[ -n ${loglevel} && -n ${loglevel_name} ]] ; then
         : # do nothing
@@ -132,27 +136,40 @@ function run_penny {
     #  return error code
 
     local r=${DIME_ERR_NONE}
+    local penny_r
 
     local penny=${1}
     shift
 
-    log info "running penny \"${penny}\""
+    log info "${penny} ${@}"
+    echo "${penny} ${@}"
 
     require ${penny} ; r=${?}
     if [[ ${r} -ne 0 ]] ; then
+        # add require failures
+        log error "${penny} ${@} failed to install"
+        echo " FAIL"
+        DIME_FAILED=$(echo -e "${DIME_FAILED}\n${penny}" | sort | uniq | grep -v "^$")
         return ${r}
     fi
 
-    log info "${penny} ${@}"
-    echo "${penny} ${@}"
     # TODO: better method of logging results
     if [[ ${DIME_LOGLEVEL} -le 2 ]] ; then
         set -x
     fi
-    ${penny} ${@} 2> /dev/null 1>&2
+    ${penny} ${@} 1>&2
+    penny_r=${?}
     # TODO: better method of logging results 2
     if [[ ${DIME_LOGLEVEL} -le 2 ]] ; then
         set +x
+    fi
+
+    # if penny failed, then record it
+    if [[ ${penny_r} -ne 0 ]] ; then
+        log error "${penny} ${@} failed to install"
+        echo " FAIL"
+        DIME_FAILED=$(echo -e "${DIME_FAILED}\n${penny}" | sort | uniq | grep -v "^$")
+        return ${penny_r}
     fi
 }
 
@@ -171,3 +188,10 @@ case ${1} in
     *)
         usage
 esac
+
+# display any failures to stdout
+if [[ -n "${DIME_FAILED}" ]] ; then
+    echo ""
+    echo "FAILED"
+    echo "${DIME_FAILED}"
+fi
