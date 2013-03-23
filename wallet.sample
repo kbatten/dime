@@ -1,2 +1,3 @@
 bash_variable EDITOR edlin
 bash_alias ll ls -alF
+package_install git

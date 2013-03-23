@@ -1,0 +1,32 @@
+#!/bin/bash
+
+function package_install_verify {
+    local retval=0
+    local r
+
+    local package
+    for package in ${@} ; do
+        dpkg -s ${package} ; r=$?
+        if [[ ! ${r} -eq 0 ]] ; then
+            retval=1
+        fi
+    done
+
+    return ${retval}
+}
+
+function package_install {
+    local retval=0
+    local r
+
+    local package
+    for package in ${@} ; do
+        sudo apt-get install -y ${package}
+    done
+
+    # verify installation
+    package_install_verify ${@}
+    retval=$?
+
+    return ${retval}
+}
