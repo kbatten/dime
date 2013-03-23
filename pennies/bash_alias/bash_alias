@@ -1,0 +1,36 @@
+#!/bin/bash
+
+function bash_alias_verify {
+    local alias=${1}
+    shift
+    local cmd=${@}
+
+    if [[ -z ${alias} ]] ; then return 1; fi
+
+    echo "unalias ${alias} ; source ${HOME}/.bashrc ; [[ \"\$(alias \"${alias}\")\" == \"alias ${alias}='${cmd}'\" ]]" | bash -i &> /dev/null
+    return $?
+}
+
+function bash_alias {
+    local retval
+
+    local alias=${1}
+    shift
+    local cmd=${@}
+
+    if [[ -z ${alias} ]] ; then return 1; fi
+
+    if grep "^alias ${alias}=" ${HOME}/.bashrc ; then
+        sed -i "s/^alias ${alias}=.*/alias ${alias}='${cmd}'/" ${HOME}/.bashrc
+    else
+        echo "alias ${alias}='${cmd}'" >> ${HOME}/.bashrc
+    fi
+
+    # verify installation
+    bash_alias_verify "${alias}" "${cmd}" ; retval=$?
+    if [[ ! ${retval} -eq 0 ]] ; then
+        log error "${alias}=${cmd} failed"
+    fi
+
+    return ${retval}
+}

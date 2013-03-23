@@ -1,1 +1,2 @@
 bash_variable EDITOR edlin
+bash_alias ll ls -alF
