@@ -2,4 +2,4 @@ package_update
 bash_variable EDITOR edlin
 bash_alias ll ls -alF
 package_install git
-dotfiles git://github.com/kbatten/scripts.git/dotfiles ${HOME}/
+dotfiles git://github.com/kbatten/scripts.git/dotfiles

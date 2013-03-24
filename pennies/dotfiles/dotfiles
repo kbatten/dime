@@ -4,7 +4,6 @@
 
 function dotfiles_verify {
     local source=${1%/}
-    local dest=${2}
 
     if [[ -z "${source}" ]] ; then return 1 ; fi
 
@@ -30,7 +29,7 @@ function dotfiles_verify {
 
 function dotfiles {
     local source=${1%/}
-    local dest=${2}
+    local dest=${HOME}
 
     if [[ -z "${source}" ]] ; then return 1 ; fi
 
