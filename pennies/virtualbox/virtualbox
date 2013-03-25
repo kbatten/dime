@@ -1,0 +1,50 @@
+#!/bin/bash
+
+#virtualbox
+
+function _virtualbox_verify {
+    if [[ "$(vboxheadless --version | tail -n1)" != "4.2.10r84104" ]] ; then
+        return 1
+    fi
+    return 0
+}
+
+function _virtualbox {
+    local retval
+
+    sudo true
+
+    # install packages with gdebi instead of dpkg
+    #  so dependencies are automatically resolved
+    run_penny package_install gdebi-core
+
+    # TODO: automatically generate a no-conflict per-penny cache if the penny needs it
+    mkdir -p "${DIME_CACHEPATH}/virtualbox" || return 1
+    cd "${DIME_CACHEPATH}/virtualbox"
+
+    # TODO: use a download wrapper
+    # TODO: assert Ubuntu 12.04 i386
+    local package_file="virtualbox-4.2_4.2.10-84104~Ubuntu~oneiric_i386.deb"
+    local package_md5="334039125cc5c23016914f664473c29a"
+
+    # if file exists, and has a valid md5 don't download
+    echo -n "MD5 (${package_file}) = ${package_md5}" | md5sum -c || {
+        log debug "\"${package_file}\" not found, or md5 mismatch"
+        rm -f "${package_file}"
+        curl "http://download.virtualbox.org/virtualbox/4.2.10/virtualbox-4.2_4.2.10-84104~Ubuntu~oneiric_i386.deb" -o "${package_file}"
+        echo -n "MD5 (${package_file}) = ${package_md5}" | md5sum -c || {
+            log error "\"${package_file}\" not found, or md5 mismatch"
+            rm -f "${package_file}"
+            return 1
+        }
+    }
+
+    log debug "installing \"${package_file}\""
+    sudo gdebi -n ${package_file}
+
+    # verify installation
+    _virtualbox_verify ${@}
+    retval=$?
+
+    return ${retval}
+}
