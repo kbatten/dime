@@ -1,0 +1,43 @@
+#!/bin/bash
+
+#vagrant
+
+function _vagrant_verify {
+    if [[ "$(vagrant -v)" != "Vagrant version 1.1.4" ]] ; then
+        return 1
+    fi
+    return 0
+}
+
+function _vagrant {
+    local retval
+
+    sudo true
+
+    # TODO: automatically generate a no-conflict per-penny cache if the penny needs it
+    mkdir -p "${DIME_CACHEPATH}/vagrant" || return 1
+    cd "${DIME_CACHEPATH}/vagrant"
+
+    # TODO: use a download wrapper
+    local package_file="vagrant_i686_1-1-4.deb"
+    # if file exists, and has a valid md5 don't download
+    echo -n "MD5 (${package_file}) = d912d18e79fb86d7aff04bb22717d5df" | md5sum -c || {
+        log debug "\"${package_file}\" not found, or md5 mismatch"
+        rm -f "${package_file}"
+        curl "http://files.vagrantup.com/packages/87613ec9392d4660ffcb1d5755307136c06af08c/vagrant_i686.deb" -o "${package_file}"
+        echo -n "MD5 (${package_file}) = d912d18e79fb86d7aff04bb22717d5df" | md5sum -c || {
+            log error "\"${package_file}\" not found, or md5 mismatch"
+            rm -f "${package_file}"
+            return 1
+        }
+    }
+
+    log debug "installing \"${package_file}\""
+    sudo dpkg -i ${package_file}
+
+    # verify installation
+    _vagrant_verify ${@}
+    retval=$?
+
+    return ${retval}
+}
