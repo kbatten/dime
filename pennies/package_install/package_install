@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function package_install_verify {
+function _package_install_verify {
     local retval=0
     local r
 
@@ -15,7 +15,7 @@ function package_install_verify {
     return ${retval}
 }
 
-function package_install {
+function _package_install {
     local retval=0
     local r
 
@@ -25,7 +25,7 @@ function package_install {
     done
 
     # verify installation
-    package_install_verify ${@}
+    _package_install_verify ${@}
     retval=$?
 
     return ${retval}

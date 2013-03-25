@@ -157,7 +157,7 @@ function run_penny {
         return ${r}
     fi
 
-    if ${penny}_verify ${@} 1>&2 || _${penny}_verify ${@} 1>&2 ; then
+    if _${penny}_verify ${@} 1>&2 ; then
         log info "${penny} ${@} already installed"
     else
         pushd . &> /dev/null
@@ -168,10 +168,10 @@ function run_penny {
             set -x
         fi
         if [[ ! ${penny} == "wallet" ]] ; then
-            ${penny} ${@} 1>&2 || _${penny} ${@} 1>&2
+            _${penny} ${@} 1>&2
             penny_r=${?}
         else
-            ${penny} ${@} || _${penny} ${@}
+            _${penny} ${@}
             penny_r=${?}
         fi
         # TODO: better method of logging results 2

@@ -1,11 +1,11 @@
 #!/bin/bash
 
-function wallet_verify {
+function _wallet_verify {
     # always return false because dime will verify individual pennies
     return 1
 }
 
-function wallet {
+function _wallet {
     local retval=0
 
     local wallet

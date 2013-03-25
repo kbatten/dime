@@ -2,7 +2,7 @@
 
 #dotfiles git://github.com/kbatten/scripts/dotfiles ${HOME}/
 
-function dotfiles_verify {
+function _dotfiles_verify {
     local source=${1%/}
 
     if [[ -z "${source}" ]] ; then return 1 ; fi
@@ -27,7 +27,7 @@ function dotfiles_verify {
     return 0
 }
 
-function dotfiles {
+function _dotfiles {
     local source=${1%/}
     local dest=${HOME}
 

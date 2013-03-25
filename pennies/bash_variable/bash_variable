@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function bash_variable_verify {
+function _bash_variable_verify {
     local variable=${1}
     local value=${2}
 
@@ -10,7 +10,7 @@ function bash_variable_verify {
     return $?
 }
 
-function bash_variable {
+function _bash_variable {
     local retval
 
     local variable=${1}
@@ -25,7 +25,7 @@ function bash_variable {
     fi
 
     # verify installation
-    bash_variable_verify "${variable}" "${value}" ; retval=$?
+    _bash_variable_verify "${variable}" "${value}" ; retval=$?
     if [[ ! ${retval} -eq 0 ]] ; then
         log error "${variable}=${value} failed"
     fi

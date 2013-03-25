@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function bash_alias_verify {
+function _bash_alias_verify {
     local alias=${1}
     shift
     local cmd=${@}
@@ -11,7 +11,7 @@ function bash_alias_verify {
     return $?
 }
 
-function bash_alias {
+function _bash_alias {
     local retval
 
     local alias=${1}
@@ -27,7 +27,7 @@ function bash_alias {
     fi
 
     # verify installation
-    bash_alias_verify "${alias}" "${cmd}" ; retval=$?
+    _bash_alias_verify "${alias}" "${cmd}" ; retval=$?
     if [[ ! ${retval} -eq 0 ]] ; then
         log error "${alias}=${cmd} failed"
     fi
