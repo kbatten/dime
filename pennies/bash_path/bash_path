@@ -1,0 +1,44 @@
+#!/bin/bash
+
+function _bash_path_verify {
+    local path=${1}
+
+    local path_new=$(echo "echo \${PATH}" | bash -i 2> /dev/null | tail -n+1)
+
+   # http://unix.stackexchange.com/questions/4988/how-do-i-test-to-see-if-an-application-exists-in-path
+    local IFSo=${IFS}
+    IFS=:
+    local found=1
+    for d in ${path_new} ; do
+        if [[ "${d}" == "${path}" ]] ; then
+            found=0
+            break
+        fi
+    done
+    IFS=${IFSo}
+
+    return ${found}
+}
+
+function _bash_path {
+    local retval
+
+    local path=${1}
+
+    if grep "^PATH=" ~/.bashrc &> /dev/null ; then
+        if ! grep -e "^PATH=.*:${path}" -e "^PATH=${path}:.*$" -e "^PATH=.*:${path}:.*$" -e "^PATH=${path}$" ~/.bashrc &> /dev/null ; then
+            path=$(echo ${path} | sed 's/\//\\\//g')
+            sed -i "s/^PATH=/PATH=${path}\:/" ~/.bashrc
+        fi
+    else
+        echo "PATH=${path}:${PATH}" >> ~/.bashrc
+    fi
+
+    # verify installation
+    _bash_path_verify $@ ; retval=$?
+    if [[ ! ${retval} -eq 0 ]] ; then
+        log error "bash_path ${path} failed"
+    fi
+
+    return ${retval}
+}
