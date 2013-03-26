@@ -31,7 +31,7 @@ function _virtualbox {
     echo -n "MD5 (${package_file}) = ${package_md5}" | md5sum -c || {
         log debug "\"${package_file}\" not found, or md5 mismatch"
         rm -f "${package_file}"
-        curl "http://download.virtualbox.org/virtualbox/4.2.10/virtualbox-4.2_4.2.10-84104~Ubuntu~oneiric_i386.deb" -o "${package_file}"
+        curl -L "http://download.virtualbox.org/virtualbox/4.2.10/virtualbox-4.2_4.2.10-84104~Ubuntu~oneiric_i386.deb" -o "${package_file}"
         echo -n "MD5 (${package_file}) = ${package_md5}" | md5sum -c || {
             log error "\"${package_file}\" not found, or md5 mismatch"
             rm -f "${package_file}"
