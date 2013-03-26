@@ -1,0 +1,45 @@
+#!/bin/bash
+
+#chef 
+
+function _chef_verify {
+    # TODO: version check helper
+    [[ "$(knife --version | cut -f 1 -d "." | cut -f 2 -d " ")" -ge 11 ]] || return 1
+    verify_penny bash_path "/opt/chef/embedded/bin" || return 1
+
+    return ${found}
+}
+
+function _chef {
+    local retval
+
+    # check sudo mode immediately
+    sudo true
+
+    # TODO: automatically generate a no-conflict per-penny cache if the penny needs it
+    mkdir -p "${DIME_CACHEPATH}/chef" || return 1
+    cd "${DIME_CACHEPATH}/chef"
+
+    local file="install.sh"
+    local md5_file="chef.md5"
+
+    # if file exists, and has a valid md5 don't download
+    md5sum "${md5_file}" || {
+        log debug "\"${file}\" not found, or md5 mismatch"
+        rm -f "${file}"
+        curl -L "https://www.opscode.com/chef/install.sh" -o "${file}"
+        chmod 700 "${file}"
+        md5sum "${file}" | sed 's/^\(\S\+\)\s\+\(\S\+\)$/MD5 (\2)=\1/' > "${md5_file}"
+    }
+
+    log debug "installing \"${file}\""
+    sudo "./${file}"
+
+    run_penny bash_path "/opt/chef/embedded/bin"
+
+    # verify installation
+    _chef_verify ${@}
+    retval=$?
+
+    return ${retval}
+}
