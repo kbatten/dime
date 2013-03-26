@@ -1,0 +1,32 @@
+#!/bin/bash
+
+#berkshelf 
+
+# if ruby is installed with the omnibus, gem may not be in the PATH
+_berkshelf_gem_bin=$(which gem | head -n1 || echo /opt/chef/embedded/bin/gem)
+
+function _berkshelf_verify {
+    vagrant plugin list | grep "^berkshelf-vagrant\b" || return 1
+    ${_berkshelf_gem_bin} list berkshelf | grep "^berkshelf\b" || return 1
+
+    return 0
+}
+
+function _berkshelf {
+    local retval
+
+    # check sudo mode immediately
+    sudo true
+
+    # vagrant needs to be installed
+    verify_penny vagrant || return 1
+
+    vagrant plugin list | grep "^berkshelf-vagrant\b" || vagrant plugin install berkshelf-vagrant
+    ${_berkshelf_gem_bin} list berkshelf | grep "^berkshelf\b" || sudo ${_berkshelf_gem_bin} install berkshelf
+
+    # verify installation
+    _berkshelf_verify ${@}
+    retval=$?
+
+    return ${retval}
+}
