@@ -191,6 +191,36 @@ function run_penny {
     fi
 }
 
+function verify_penny {
+    # params:
+    #  penny - name of penny to verify
+    # convention:
+    #  ignore stdout
+    #  return error code
+
+    local r=${DIME_ERR_NONE}
+
+    local penny=${1}
+    shift
+    local args=${@}
+
+    log debug "verify ${penny} ${@}"
+
+    require ${penny} ; r=${?}
+    if [[ ${r} -ne 0 ]] ; then
+        # add require failures
+        # TODO: unduplicate from run_penny into require
+        log error "${penny} ${@} failed to install"
+        echo " FAIL"
+        DIME_FAILED=$(echo -e "${DIME_FAILED}\n${penny} ${args}" | sort | uniq | grep -v "^$")
+        return ${r}
+    fi
+
+    _${penny}_verify ${args} 1>&2 ; r=${?}
+
+    return ${r}
+}
+
 function usage {
     # convetion:
     #  print stdout
