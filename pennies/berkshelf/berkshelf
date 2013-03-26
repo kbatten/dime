@@ -3,7 +3,7 @@
 #berkshelf 
 
 # if ruby is installed with the omnibus, gem may not be in the PATH
-_berkshelf_gem_bin=$(which gem | head -n1 || echo /opt/chef/embedded/bin/gem)
+_berkshelf_gem_bin=$(which gem || echo /opt/chef/embedded/bin/gem)
 
 function _berkshelf_verify {
     vagrant plugin list | grep "^berkshelf-vagrant\b" || return 1
