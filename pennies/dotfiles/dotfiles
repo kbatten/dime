@@ -4,27 +4,46 @@
 
 function _dotfiles_verify {
     local source=${1%/}
+    local dest=${HOME}
+
+    local retval
 
     if [[ -z "${source}" ]] ; then return 1 ; fi
 
-    run_penny package_install git
+    if [[ "${source::6}" == "git://" ]] ; then
+        run_penny package_install git
 
-    git_source_sub=${source##*.git}
-    git_source=${source%$git_source_sub}
-    git_source_dir=${git_source_sub##*/} ; [[ ${#git_source_dir} -eq 0 ]] && git_source_dir="."
+        git_source_sub=${source##*.git}
+        git_source=${source%$git_source_sub}
+        git_source_dir=${git_source_sub##*/} ; [[ ${#git_source_dir} -eq 0 ]] && git_source_dir="."
 
-    cd "${DIME_CACHEPATH}/dotfiles" || return 1
-    git status || return 1
-    git fetch origin || return 1
+        cd "${DIME_CACHEPATH}/dotfiles" || return 1
+        git status || return 1
+        git fetch origin || return 1
 
-    # look for diffs in the specific files against git
-    if [[ $(git diff --name-status origin/master "${git_source_dir}" | wc -l) -gt 0 ]] ; then
-        return 1
+        # look for diffs in the specific files against git
+        if [[ $(git diff --name-status origin/master "${git_source_dir}" | wc -l) -gt 0 ]] ; then
+            return 1
+        fi
+
+        # TODO: look for diffs vs destination
+    else
+        retval=0
+        pushd .
+        cd ${source}
+        find . -type f | {
+            while read source_file ; do
+                dest_file="${dest}/${source_file}"
+                dest_dir=$(dirname ${dest_file})
+                diff "${source_file}" "${dest_file}" || return 1
+            done
+        } || retval=1
+        popd
+
+        return ${retval}
     fi
 
-    # TODO: look for diffs vs destination
-
-    return 0
+    return 1
 }
 
 function _dotfiles {
@@ -33,34 +52,48 @@ function _dotfiles {
 
     if [[ -z "${source}" ]] ; then return 1 ; fi
 
-    # fetch files with git
-    run_penny package_install git
-    # TODO: see what happens when we aren't checking out a subdirectory
-    git_source_sub=${source##*.git}
-    git_source=${source%$git_source_sub}
-    git_source_dir=${git_source_sub##*/} ; [[ ${#git_source_dir} -eq 0 ]] && git_source_dir="."
+    if [[ "${source::6}" == "git://" ]] ; then
+        # fetch files with git
+        run_penny package_install git
+        # TODO: see what happens when we aren't checking out a subdirectory
+        git_source_sub=${source##*.git}
+        git_source=${source%$git_source_sub}
+        git_source_dir=${git_source_sub##*/} ; [[ ${#git_source_dir} -eq 0 ]] && git_source_dir="."
 
-    mkdir -p "${DIME_CACHEPATH}/dotfiles"
-    cd "${DIME_CACHEPATH}/dotfiles"
+        mkdir -p "${DIME_CACHEPATH}/dotfiles"
+        cd "${DIME_CACHEPATH}/dotfiles"
 
-    # if not a git repo, init it
-    git status || {
-        git init
-        git remote add -f origin ${git_source}
-        git config core.sparsecheckout true
-        echo ${git_source_sub} > .git/info/sparse-checkout
-        git pull origin master
+        # if not a git repo, init it
+        git status || {
+            git init
+            git remote add -f origin ${git_source}
+            git config core.sparsecheckout true
+            echo ${git_source_sub} > .git/info/sparse-checkout
+            git pull origin master
         }
 
-    # if cache existed, see if source has been modified
-    git fetch origin
-    # look for diffs in the specific files
-    if [[ $(git diff --name-status origin/master "${git_source_dir}" | wc -l) -gt 0 ]] ; then
-        git pull origin master
-    fi
+        # if cache existed, see if source has been modified
+        git fetch origin
+        # look for diffs in the specific files
+        if [[ $(git diff --name-status origin/master "${git_source_dir}" | wc -l) -gt 0 ]] ; then
+            git pull origin master
+        fi
 
-    pushd ${git_source_dir} && \cp -r . "${dest}"
-    popd
+        pushd ${git_source_dir} && \cp -r . "${dest}"
+        popd
+    else
+        # fetch files with cp
+        pushd .
+        cd ${source}
+        find . -type f | {
+            while read source_file ; do
+                dest_file="${dest}/${source_file}"
+                dest_dir=$(dirname ${dest_file})
+                mkdir -p "${dest_dir}" && \cp "${source_file}" "${dest_dir}"
+            done
+        }
+        popd
+    fi
 
     return 0
 }
