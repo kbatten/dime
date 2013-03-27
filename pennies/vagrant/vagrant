@@ -19,13 +19,26 @@ function _vagrant {
     cd "${DIME_CACHEPATH}/vagrant"
 
     # TODO: use a download wrapper
-    local package_file="vagrant_i686_1-1-4.deb"
+    # centos6 64bit
+    rpm --version && [[ $(uname -p) == "x86_64" ]] && {
+        local package_url="http://files.vagrantup.com/packages/87613ec9392d4660ffcb1d5755307136c06af08c/vagrant_x86_64.rpm"
+        local package_file="vagrant_x86_64_1-1-4.rpm"
+        local package_md5="95f30df5cb93db6282f7edc42eedfe59"
+        local package_installer="sudo yum -y install"
+    }
+    # ubuntu12.04 32bit
+    dpkg --version && [[ $(uname -p) == "i686" ]] && {
+        local pacakge_url="http://files.vagrantup.com/packages/87613ec9392d4660ffcb1d5755307136c06af08c/vagrant_i686.deb"
+        local package_file="vagrant_i686_1-1-4.deb"
+        local package_md5="d912d18e79fb86d7aff04bb22717d5df"
+        local package_installer="sudo dpkg -i"
+    }
     # if file exists, and has a valid md5 don't download
-    echo -n "MD5 (${package_file}) = d912d18e79fb86d7aff04bb22717d5df" | md5sum -c || {
+    echo -n "MD5 (${package_file}) = ${package_md5}" | md5sum -c || {
         log debug "\"${package_file}\" not found, or md5 mismatch"
         rm -f "${package_file}"
-        curl "http://files.vagrantup.com/packages/87613ec9392d4660ffcb1d5755307136c06af08c/vagrant_i686.deb" -o "${package_file}"
-        echo -n "MD5 (${package_file}) = d912d18e79fb86d7aff04bb22717d5df" | md5sum -c || {
+        curl -L "${package_url}" -o "${package_file}"
+        echo -n "MD5 (${package_file}) = ${package_md5}" | md5sum -c || {
             log error "\"${package_file}\" not found, or md5 mismatch"
             rm -f "${package_file}"
             return 1
@@ -33,7 +46,7 @@ function _vagrant {
     }
 
     log debug "installing \"${package_file}\""
-    sudo dpkg -i ${package_file}
+    ${package_installer} ${package_file}
 
     # verify installation
     _vagrant_verify ${@}
