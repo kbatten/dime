@@ -19,15 +19,25 @@ function _virtualbox {
     cd "${DIME_CACHEPATH}/virtualbox"
 
     # TODO: use a download wrapper
-    # TODO: assert Ubuntu 12.04 i386
-    local package_file="virtualbox-4.2_4.2.10-84104~Ubuntu~oneiric_i386.deb"
-    local package_md5="334039125cc5c23016914f664473c29a"
-
+    # centos6 64bit
+    rpm --version && [[ $(uname -p) == "x86_64" ]] && {
+        local package_url="http://download.virtualbox.org/virtualbox/rpm/el/6/x86_64/VirtualBox-4.2-4.2.10_84104_el6-1.x86_64.rpm"
+        local package_file="VirtualBox-4.2-4.2.10_84104_el6-1.x86_64.rpm"
+        local package_md5="e0582f7d410ea66d5a061a3795a5ebe3"
+        local package_installer="sudo yum -y install"
+    }
+    # ubuntu12.04 32bit
+    dpkg --version && [[ $(uname -p) == "i686" ]] && {
+        local package_url="http://download.virtualbox.org/virtualbox/4.2.10/virtualbox-4.2_4.2.10-84104~Ubuntu~oneiric_i386.deb"
+        local package_file="virtualbox-4.2_4.2.10-84104~Ubuntu~oneiric_i386.deb"
+        local package_md5="334039125cc5c23016914f664473c29a"
+        local package_installer="sudo gdebi -n"
+    }
     # if file exists, and has a valid md5 don't download
     echo -n "MD5 (${package_file}) = ${package_md5}" | md5sum -c || {
         log debug "\"${package_file}\" not found, or md5 mismatch"
         rm -f "${package_file}"
-        curl -L "http://download.virtualbox.org/virtualbox/4.2.10/virtualbox-4.2_4.2.10-84104~Ubuntu~oneiric_i386.deb" -o "${package_file}"
+        curl -L "${package_url}" -o "${package_file}"
         echo -n "MD5 (${package_file}) = ${package_md5}" | md5sum -c || {
             log error "\"${package_file}\" not found, or md5 mismatch"
             rm -f "${package_file}"
@@ -38,7 +48,7 @@ function _virtualbox {
     log debug "installing \"${package_file}\""
     # install packages with gdebi instead of dpkg
     #  so dependencies are automatically resolved
-    sudo gdebi -n ${package_file}
+    ${package_installer} ${package_file}
 
     # verify installation
     _virtualbox_verify ${@}
