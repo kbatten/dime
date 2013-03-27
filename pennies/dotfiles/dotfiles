@@ -26,24 +26,21 @@ function _dotfiles_verify {
             return 1
         fi
 
-        # TODO: look for diffs vs destination
-    else
-        retval=0
-        pushd .
-        cd ${source}
-        find . -type f | {
-            while read source_file ; do
-                dest_file="${dest}/${source_file}"
-                dest_dir=$(dirname ${dest_file})
-                diff "${source_file}" "${dest_file}" || return 1
-            done
-        } || retval=1
-        popd
-
-        return ${retval}
+        source=${git_source_dir}
     fi
+    retval=0
+    pushd .
+    cd ${source}
+    find . -type f | {
+        while read source_file ; do
+            dest_file="${dest}/${source_file}"
+            dest_dir=$(dirname ${dest_file})
+            diff "${source_file}" "${dest_file}" || return 1
+        done
+    } || retval=1
+    popd
 
-    return 1
+    return ${retval}
 }
 
 function _dotfiles {
@@ -79,21 +76,19 @@ function _dotfiles {
             git pull origin master
         fi
 
-        pushd ${git_source_dir} && \cp -r . "${dest}"
-        popd
-    else
-        # fetch files with cp
-        pushd .
-        cd ${source}
-        find . -type f | {
-            while read source_file ; do
-                dest_file="${dest}/${source_file}"
-                dest_dir=$(dirname ${dest_file})
-                mkdir -p "${dest_dir}" && \cp "${source_file}" "${dest_dir}"
-            done
-        }
-        popd
+        source=${git_source_dir}
     fi
+    # fetch files with cp
+    pushd .
+    cd ${source}
+    find . -type f | {
+        while read source_file ; do
+            dest_file="${dest}/${source_file}"
+            dest_dir=$(dirname ${dest_file})
+            mkdir -p "${dest_dir}" && \cp "${source_file}" "${dest_dir}"
+        done
+    }
+    popd
 
     return 0
 }
