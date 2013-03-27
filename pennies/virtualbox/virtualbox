@@ -14,10 +14,6 @@ function _virtualbox {
 
     sudo true
 
-    # install packages with gdebi instead of dpkg
-    #  so dependencies are automatically resolved
-    run_penny package_install gdebi-core
-
     # TODO: automatically generate a no-conflict per-penny cache if the penny needs it
     mkdir -p "${DIME_CACHEPATH}/virtualbox" || return 1
     cd "${DIME_CACHEPATH}/virtualbox"
@@ -40,6 +36,8 @@ function _virtualbox {
     }
 
     log debug "installing \"${package_file}\""
+    # install packages with gdebi instead of dpkg
+    #  so dependencies are automatically resolved
     sudo gdebi -n ${package_file}
 
     # verify installation
